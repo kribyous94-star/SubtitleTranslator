@@ -1,0 +1,9 @@
+# Tout ce qui est généré/téléchargé reste dans le dossier mais hors du dépôt
+venvs/
+models/
+data/
+
+__pycache__/
+*.pyc
+*.pyo
+.DS_Store
