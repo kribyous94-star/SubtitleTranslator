@@ -47,7 +47,9 @@ echo "Installation de SubtitleTranslator dans : $ROOT"
 make_venv app "$ROOT/app/requirements.txt"
 
 if [ "$INSTALL_ARGOS" = 1 ]; then
-    make_venv argos "$ROOT/backends/argos/requirements.txt"
+    # argostranslate dépend de stanza -> torch : forcer torch CPU ici aussi
+    make_venv argos "$ROOT/backends/argos/requirements.txt" \
+        --extra-index-url https://download.pytorch.org/whl/cpu
 else
     echo ""; echo "==> backend argos ignoré (--no-argos)"
 fi
