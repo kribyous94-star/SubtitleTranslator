@@ -1,0 +1,2 @@
+# Venv « argos » : Argos Translate (embarque ctranslate2 et sentencepiece).
+argostranslate>=1.9

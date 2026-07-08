@@ -1,0 +1,8 @@
+# Venv « app » : serveur web, parsing des sous-titres, détection de langue,
+# backend API (LibreTranslate). Aucune bibliothèque de traduction lourde ici.
+fastapi>=0.111
+uvicorn>=0.30
+python-multipart>=0.0.9
+pysubs2>=1.7
+langdetect>=1.0.9
+requests>=2.31

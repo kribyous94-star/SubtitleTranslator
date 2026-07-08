@@ -1,0 +1,6 @@
+# Venv « hf » : modèles Hugging Face (NLLB, M2M100), torch CPU uniquement
+# (install.sh ajoute --extra-index-url https://download.pytorch.org/whl/cpu).
+torch>=2.2
+transformers>=4.40,<5
+sentencepiece>=0.1.99
+huggingface_hub>=0.23
