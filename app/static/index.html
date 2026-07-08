@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SubtitleTranslator</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header>
+    <h1>SubtitleTranslator</h1>
+    <nav>
+      <button class="tab active" data-tab="translate">Traduire</button>
+      <button class="tab" data-tab="models">Modèles</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- Onglet Traduire -->
+    <section id="tab-translate" class="panel active">
+      <form id="job-form">
+        <label class="dropzone" id="dropzone">
+          <input type="file" id="file" accept=".srt,.vtt,.ass,.ssa,.sub,.tmp" hidden>
+          <span id="dropzone-label">Déposer un fichier de sous-titres ici, ou cliquer pour choisir<br>
+          <small>SRT · VTT · ASS · SSA · SUB · TMP</small></span>
+        </label>
+
+        <div class="row">
+          <div class="field">
+            <label for="source">Langue source</label>
+            <select id="source"><option value="auto">Détection automatique</option></select>
+          </div>
+          <div class="field">
+            <label for="target">Langue cible</label>
+            <select id="target"></select>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label for="model">Modèle</label>
+            <select id="model"></select>
+            <small id="model-hint"></small>
+          </div>
+          <div class="field">
+            <label for="out-format">Format de sortie</label>
+            <select id="out-format"><option value="">Identique à l'entrée</option></select>
+          </div>
+        </div>
+
+        <button type="submit" class="primary" id="submit-btn">Lancer la traduction</button>
+      </form>
+
+      <div id="job-status" hidden>
+        <div class="progress"><div class="bar" id="job-bar"></div></div>
+        <p id="job-message"></p>
+        <a id="job-download" class="primary button" hidden download>Télécharger le fichier traduit</a>
+      </div>
+    </section>
+
+    <!-- Onglet Modèles -->
+    <section id="tab-models" class="panel">
+      <p class="note">Le téléchargement des modèles nécessite internet <strong>une seule fois</strong> ;
+      la traduction est ensuite entièrement hors ligne. Tout est stocké dans le dossier
+      <code>models/</code> du projet.</p>
+      <div id="models-list"></div>
+    </section>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
