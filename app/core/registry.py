@@ -49,12 +49,18 @@ CATALOG = {
 
 
 def _hf_model_dir(hf_id: str):
-    return HF_HOME / "hub" / ("models--" + hf_id.replace("/", "--"))
+    return HF_HOME / "local" / hf_id.replace("/", "--")
 
 
 def hf_installed(hf_id: str) -> bool:
     d = _hf_model_dir(hf_id)
-    return d.is_dir() and any((d / "snapshots").glob("*/*")) if d.is_dir() else False
+    if not d.is_dir():
+        return False
+    return (
+        any(d.glob("*.safetensors"))
+        or any(d.glob("pytorch_model*.bin"))
+        or any(d.glob("model.safetensors"))
+    )
 
 
 def hf_uninstall(hf_id: str) -> None:
