@@ -1,9 +1,10 @@
-# Lance SubtitleTranslator (serveur web local sur http://127.0.0.1:8765).
+﻿# Lance SubtitleTranslator (serveur web local sur http://127.0.0.1:8765).
 #
 # Variables d'environnement optionnelles :
 #   $env:HOST  — adresse d'écoute (défaut : 127.0.0.1)
 #   $env:PORT  — port           (défaut : 8765)
 $ErrorActionPreference = 'Stop'
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
 $ROOT   = $PSScriptRoot
 $APP_PY = Join-Path $ROOT "venvs\app\Scripts\python.exe"

@@ -1,4 +1,4 @@
-# Installe SubtitleTranslator : crée les venvs dans .\venvs et installe les
+﻿# Installe SubtitleTranslator : crée les venvs dans .\venvs et installe les
 # dépendances. Tout reste dans ce dossier — le supprimer supprime tout.
 #
 # Usage : .\install.ps1 [-NoHF] [-NoArgos]
@@ -11,6 +11,7 @@ param(
     [switch]$NoArgos
 )
 $ErrorActionPreference = 'Stop'
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
 $ROOT   = $PSScriptRoot
 $PYTHON = if ($env:PYTHON) { $env:PYTHON } else { "python" }
