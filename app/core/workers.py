@@ -6,12 +6,20 @@ au dossier du projet par variables d'environnement."""
 import json
 import os
 import subprocess
+import sys
 from typing import Callable
 
 from .paths import ARGOS_PACKAGES, BACKENDS, CACHE, HF_HOME, ROOT, VENVS, XDG_DATA
 
 # le backend « api » est léger : il tourne dans le venv « app »
 WORKER_VENV = {"argos": "argos", "hf": "hf", "api": "app"}
+
+# Sur Windows : venvs/<nom>/Scripts/python.exe
+# Sur Unix    : venvs/<nom>/bin/python
+def _venv_python(venv_name: str):
+    if sys.platform == "win32":
+        return VENVS / venv_name / "Scripts" / "python.exe"
+    return VENVS / venv_name / "bin" / "python"
 
 
 class WorkerError(Exception):
@@ -41,10 +49,11 @@ def run_worker(
 
     Le worker écrit sur stdout des lignes JSON : progress, log, result, error.
     """
-    python = VENVS / WORKER_VENV[backend] / "bin" / "python"
+    python = _venv_python(WORKER_VENV[backend])
     if not python.exists():
+        script = "install.ps1" if sys.platform == "win32" else "install.sh"
         raise WorkerError(
-            f"Le venv du backend « {backend} » n'est pas installé (relancer ./install.sh)."
+            f"Le venv du backend « {backend} » n'est pas installé (relancer ./{script})."
         )
     cmd = [str(python), str(BACKENDS / backend / "worker.py"), *args]
     proc = subprocess.Popen(
