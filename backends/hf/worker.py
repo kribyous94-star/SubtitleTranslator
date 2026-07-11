@@ -91,20 +91,66 @@ def cmd_translate(args) -> None:
 
 
 def cmd_install(args) -> None:
-    from huggingface_hub import snapshot_download
+    import os
+    import requests
+    from fnmatch import fnmatch
+    from huggingface_hub import HfApi, hf_hub_url
+
+    PATTERNS = ["*.json", "*.model", "*.txt", "pytorch_model*.bin",
+                "model.safetensors", "sentencepiece*", "tokenizer*"]
+    CHUNK = 4 * 1024 * 1024  # 4 Mo par lecture
 
     local_dir = _local_model_dir(args.model)
+    os.makedirs(local_dir, exist_ok=True)
     emit({"type": "progress", "value": 0.02})
-    # local_dir_use_symlinks=False : copie directe des fichiers, évite
-    # WinError 1314 (symlinks refusés sans mode Développeur sur Windows).
-    snapshot_download(
-        repo_id=args.model,
-        local_dir=local_dir,
-        local_dir_use_symlinks=False,
-        allow_patterns=["*.json", "*.model", "*.txt",
-                        "pytorch_model.bin", "model.safetensors",
-                        "sentencepiece*", "tokenizer*"],
-    )
+
+    # Récupérer la liste des fichiers avec leur taille réelle
+    api = HfApi()
+    try:
+        info = api.repo_info(args.model, repo_type="model", files_metadata=True)
+    except Exception as exc:
+        fail(f"Impossible d'accéder au dépôt {args.model} : {exc}")
+
+    siblings = [
+        s for s in (info.siblings or [])
+        if any(fnmatch(s.rfilename, p) for p in PATTERNS)
+    ]
+    if not siblings:
+        fail(f"Aucun fichier trouvé pour {args.model}.")
+
+    total_bytes = sum(s.size or 0 for s in siblings)
+    done_bytes = 0
+
+    token = os.environ.get("HF_TOKEN") or os.environ.get("HUGGING_FACE_HUB_TOKEN")
+    headers = {"Authorization": f"Bearer {token}"} if token else {}
+
+    for sibling in siblings:
+        dest = os.path.join(local_dir, sibling.rfilename)
+        os.makedirs(os.path.dirname(dest), exist_ok=True)
+
+        # Sauter si déjà présent et de la bonne taille
+        file_size = sibling.size or 0
+        if os.path.isfile(dest) and os.path.getsize(dest) == file_size:
+            done_bytes += file_size
+            emit({"type": "progress",
+                  "value": 0.05 + 0.93 * done_bytes / max(total_bytes, 1)})
+            continue
+
+        url = hf_hub_url(args.model, sibling.rfilename)
+        with requests.get(url, headers=headers, stream=True, timeout=120) as r:
+            r.raise_for_status()
+            file_done = 0
+            with open(dest, "wb") as f:
+                for chunk in r.iter_content(chunk_size=CHUNK):
+                    if not chunk:
+                        continue
+                    f.write(chunk)
+                    file_done += len(chunk)
+                    progress = 0.05 + 0.93 * (done_bytes + file_done) / max(total_bytes, 1)
+                    emit({"type": "progress", "value": min(0.98, progress)})
+
+        done_bytes += file_size
+
     emit({"type": "result", "installed": args.model})
 
 
