@@ -7,7 +7,12 @@ import json
 import os
 import subprocess
 import sys
+import threading
+import time
 from typing import Callable
+
+# Secondes sans aucun message du worker avant abandon (traduction d'un gros fichier)
+WORKER_TIMEOUT = 600  # 10 minutes
 
 from .paths import ARGOS_PACKAGES, BACKENDS, CACHE, HF_HOME, ROOT, VENVS, XDG_DATA
 
@@ -66,11 +71,24 @@ def run_worker(
     )
     result = None
     error = None
+    last_msg_time = time.monotonic()
+
+    def _watchdog() -> None:
+        while proc.poll() is None:
+            if time.monotonic() - last_msg_time > WORKER_TIMEOUT:
+                proc.kill()
+                break
+            time.sleep(10)
+
+    wd = threading.Thread(target=_watchdog, daemon=True)
+    wd.start()
+
     assert proc.stdout is not None
     for raw in proc.stdout:
         raw = raw.strip()
         if not raw:
             continue
+        last_msg_time = time.monotonic()
         try:
             msg = json.loads(raw)
         except ValueError:

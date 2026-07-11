@@ -12,7 +12,7 @@ import argparse
 import json
 import sys
 
-BATCH_SIZE = 16
+BATCH_SIZE = 8
 
 # ISO 639-1 -> code FLORES-200 (NLLB)
 FLORES = {
@@ -81,7 +81,7 @@ def cmd_translate(args) -> None:
             enc = tokenizer(batch, return_tensors="pt", padding=True,
                             truncation=True, max_length=512)
             gen = model.generate(**enc, forced_bos_token_id=forced_bos,
-                                 max_length=512, num_beams=4)
+                                 max_length=512, num_beams=2)
             out.extend(tokenizer.batch_decode(gen, skip_special_tokens=True))
             emit({"type": "progress", "value": min(1.0, (start + len(batch)) / total)})
 
