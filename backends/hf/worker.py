@@ -36,7 +36,15 @@ def fail(message: str) -> None:
     sys.exit(1)
 
 
+def _local_model_dir(model_id: str) -> str:
+    """Chemin local sans symlinks pour un modèle (évite WinError 1314)."""
+    import os
+    hf_home = os.environ.get("HF_HOME", "")
+    return os.path.join(hf_home, "local", model_id.replace("/", "--"))
+
+
 def cmd_translate(args) -> None:
+    import os
     import torch
     from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 
@@ -44,21 +52,25 @@ def cmd_translate(args) -> None:
     texts = payload["texts"]
     is_nllb = "nllb" in args.model.lower()
 
+    # Préférer le dossier local (copie directe, pas de symlinks) si disponible
+    local_dir = _local_model_dir(args.model)
+    model_path = local_dir if os.path.isdir(local_dir) else args.model
+
     if is_nllb:
         src, tgt = FLORES.get(args.source), FLORES.get(args.target)
         if not src or not tgt:
             fail(f"Langue non couverte par la table NLLB : {args.source} ou {args.target}.")
-        tokenizer = AutoTokenizer.from_pretrained(args.model, src_lang=src)
+        tokenizer = AutoTokenizer.from_pretrained(model_path, src_lang=src)
         forced_bos = tokenizer.convert_tokens_to_ids(tgt)
     else:  # m2m100 : codes ISO 639-1 directement
-        tokenizer = AutoTokenizer.from_pretrained(args.model)
+        tokenizer = AutoTokenizer.from_pretrained(model_path)
         tokenizer.src_lang = args.source
         try:
             forced_bos = tokenizer.get_lang_id(args.target)
         except KeyError:
             fail(f"Langue « {args.target} » non couverte par M2M100.")
 
-    model = AutoModelForSeq2SeqLM.from_pretrained(args.model)
+    model = AutoModelForSeq2SeqLM.from_pretrained(model_path)
     model.eval()
 
     out: list[str] = []
@@ -81,11 +93,14 @@ def cmd_translate(args) -> None:
 def cmd_install(args) -> None:
     from huggingface_hub import snapshot_download
 
+    local_dir = _local_model_dir(args.model)
     emit({"type": "progress", "value": 0.02})
-    # tqdm affiche sur stderr ; on se contente d'un progrès grossier ici,
-    # le téléchargement étant repris automatiquement s'il est interrompu.
+    # local_dir_use_symlinks=False : copie directe des fichiers, évite
+    # WinError 1314 (symlinks refusés sans mode Développeur sur Windows).
     snapshot_download(
         repo_id=args.model,
+        local_dir=local_dir,
+        local_dir_use_symlinks=False,
         allow_patterns=["*.json", "*.model", "*.txt",
                         "pytorch_model.bin", "model.safetensors",
                         "sentencepiece*", "tokenizer*"],
